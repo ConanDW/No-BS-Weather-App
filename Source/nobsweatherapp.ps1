@@ -23,7 +23,8 @@ function Get-WeatherData {
     $Forecast = Invoke-RestMethod -uri $SecondRequest
     $ReturnedForecast = $Forecast.properties.periods
     $ReturnedForecast = $ReturnedForecast | Select-Object name, temperature, temperatureUnit, windSpeed, windDirection, detailedForecast
-    $ReturnedForecast | Out-GridView
+    $CitySelected = $CitySelected.trim()
+    $ReturnedForecast | Out-GridView -Title "Weather Forecast for $CitySelected"
     #get icons to work
 }
 
