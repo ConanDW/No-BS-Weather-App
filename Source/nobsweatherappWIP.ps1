@@ -40,14 +40,14 @@ function Get-WeatherData {
             Write-Error "Invalid city or the request failed, please try again." | Out-GridView
         }
     }
-    Display-WeatherData $script:ReturnedForecast $script:ReturnedForecastTwo
+    Display-WeatherData $script:ReturnedForecast #-DataFromGetWeatherDataTwo $script:ReturnedForecastTwo
     #End { $ReturnedForecast | Out-GridView -Title "Weather for $CitySelected"}
     #get icons to work
 }
 function Display-WeatherData {
     Param (
-        $DataFromGetWeatherData,
-        $DataFromGetWeatherDataTwo
+        $DataFromGetWeatherData
+        #$DataFromGetWeatherDataTwo
     )
     $DataForm = New-Object Windows.Forms.Form
     $DataForm.Text = "Weather for: $script:CityOutput"
