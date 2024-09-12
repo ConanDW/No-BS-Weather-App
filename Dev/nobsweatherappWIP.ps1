@@ -40,15 +40,10 @@ function Get-WeatherData {
             Write-Error "Invalid city or the request failed, please try again." | Out-GridView
         }
     }
-    Display-WeatherData $script:ReturnedForecast $script:ReturnedForecastTwo
-    #End { $ReturnedForecast | Out-GridView -Title "Weather for $CitySelected"}
     #get icons to work
+    Display-WeatherData
 }
 function Display-WeatherData {
-    Param (
-        $DataFromGetWeatherData,
-        $DataFromGetWeatherDataTwo
-    )
     $DataForm = New-Object Windows.Forms.Form
     $DataForm.Text = "Weather for: $script:CityOutput"
     $DataForm.Font = New-Object Drawing.Font("Cambria", 12, [Drawing.FontStyle]::Regular)
@@ -78,9 +73,9 @@ function Display-WeatherData {
     }
     #>
     $WeatherArry = New-Object System.Collections.ArrayList
-    $WeatherArry.AddRange($DataFromGetWeatherData)
+    $WeatherArry.AddRange($script:ReturnedForecast)
     $WeatherArryTwo = New-Object System.Collections.ArrayList
-    $WeatherArryTwo.AddRange($DataFromGetWeatherDataTwo)
+    $WeatherArryTwo.AddRange($script:ReturnedForecastTwo)
     $WeatherDataOutput.DataSource = $WeatherArry
     $WeatherDataOutput.AutoSize = $true
     $WeatherDataOutput.AutoSizeColumnsMode = "AllCells"
