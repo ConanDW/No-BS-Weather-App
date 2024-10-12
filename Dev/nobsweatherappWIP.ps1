@@ -4,6 +4,7 @@ $script:CurrentLocation = $CurrentLocation.Path
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 [System.Windows.Forms.Application]::EnableVisualStyles()
+$script:ApiKey = "" #API KEY IS ON DESKTOP
 #endregion DECLORATIONS
 #region FUNCTIONS
 function Get-WeatherData {
@@ -14,27 +15,27 @@ function Get-WeatherData {
     )
     try {
         $script:CityOutput = $CitySelected
-        $CityConverter = Import-Csv "$script:CurrentLocation\worldcities.csv"
-        $CitySelected = $CitySelected.split(",")
-        $AdmSelected = $CitySelected[1].tostring()
-        $AdmSelected = $AdmSelected.trim()
-    } catch {
-        Write-Error "Cannot Find City CSV" | Out-GridView
-    }
-    try {
-        foreach ($City in $CityConverter) {
-            if ($City.city -eq $CitySelected[0] -and $City.Admin_name -eq $AdmSelected) {
-                $ReturnLatLong = $City | Select-Object lat, lng
-                $Lat = $ReturnLatLong.lat
-                $Long = $ReturnLatLong.lng
-            }
+        $CityArray = $CitySelected.Split(",")
+        $City = $CityArray[0].ToString()
+        $Country = $CityArray[1].ToString()
+        $LatLongUrl = "https://api.api-ninjas.com/v1/geocoding?city=$City&country=$Country"
+        $Header = @{
+            'X-Api-Key' = "$script:ApiKey"
         }
+        $ReturnLatLong = Invoke-RestMethod -Uri $LatLongUrl -Headers $Header
+        $Lat = $ReturnLatLong.latitude[0]
+        $Long = $ReturnLatLong.longitude[0]
         [string]$ForecastUri = "https://api.weather.gov/points/$lat,$long"
         $Request = Invoke-RestMethod -uri "$ForecastUri"
         $SecondRequest = $Request.properties.forecast
         $Forecast = Invoke-RestMethod -uri $SecondRequest
-        $script:ReturnedForecast = $Forecast.properties.periods | Select-Object name, temperature, temperatureUnit, windSpeed, windDirection
+        $script:ReturnedForecast = $Forecast.properties.periods | Select-Object name, @{n='Day'; e='name'}, `
+            temperature, @{n='Forecasted Temperature'; e='temperature'}, temperatureUnit, @{n='F/C'; e='temperatureUnit'}, `
+                windSpeed, @{n='Wind Speed'; e='windSpeed'}, windDirection, @{n='Wind Direction'; e='windDirection'}
+        $script:ReturnedForecast = $script:ReturnedForecast | Select-Object 'Day', 'Forecasted Temperature', 'F/C', 'Wind Speed', 'Wind Direction'
         $script:ReturnedForecastTwo = $Forecast.properties.periods | Select-Object detailedForecast
+        $script:ReturnedForecastTwo = $script:ReturnedForecastTwo | Select-Object detailedForecast, @{n='Full Forecast'; e='detailedForecast'}
+        $script:ReturnedForecastTwo = $script:ReturnedForecastTwo | Select-Object 'Full Forecast'
     } catch {
         If ($error.CategoryInfo.category[1] -eq "InvalidData") {
             Write-Error "Invalid city or the request failed, please try again." | Out-GridView
@@ -51,10 +52,12 @@ function Display-WeatherData {
     $DataForm.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon("$script:CurrentLocation\cloud.ico") #.\cloud.ico for exe, use full path for testings
     $DataForm.StartPosition = "CenterScreen"
     $DataForm.BackColor = [System.Drawing.Color]::WhiteSmoke
+    $DataForm.WindowState = "Maximized"
     $WeatherDataOutput = New-Object System.Windows.Forms.DataGridView  
     $WeatherDataOutput.Location = New-Object System.Drawing.Size(20,100)
     $WeatherDataOutputTwo = New-Object System.Windows.Forms.DataGridView  
-    $WeatherDataOutputTwo.Location = New-Object System.Drawing.Size(20,500) 
+    $WeatherDataOutputTwo.Location = New-Object System.Drawing.Size(20,500)
+    #declare forms above, props below
     $PictureBox = new-object Windows.Forms.PictureBox
     $PictureBox.AutoSize = $true
     <#
@@ -82,10 +85,12 @@ function Display-WeatherData {
     $WeatherDataOutput.AutoSizeRowsMode = "AllCells"
     $WeatherDataOutputTwo.DataSource = $WeatherArryTwo
     $WeatherDataOutputTwo.AutoSize = $true
-    $WeatherDataOutputTwo.AutoSizeColumnsMode = "AllCells"
-    $WeatherDataOutputTwo.AutoSizeRowsMode = "AllCells"
+
+    #NEED TO FIGURE OUT HOW TO SIZE THE ROWS SO THAT THEY DONT GO OFF THE SCREEN
+    $WeatherDataOutputTwo.ScrollBars = "Both"
     $DataForm.Controls.Add($WeatherDataOutput)
     $DataForm.Controls.Add($WeatherDataOutputTwo)
+    $WeatherDataOutputTwo.PerformLayout()
     #$DataForm.Controls.Add($PictureBox)
     $DataForm.Topmost = $True
     $DataForm.Add_Shown({ $DataForm.Activate() })
@@ -105,7 +110,7 @@ $MainMenu.BackColor = [System.Drawing.Color]::WhiteSmoke
 
 <#Label Creation#>
 $MainMenuLabel = New-Object Windows.Forms.Label
-$MainMenuLabel.Text = "Enter City and Administravive Devison."    
+$MainMenuLabel.Text = "Enter City and Country. EX: Cleveland, USA"    
 $MainMenuLabel.Location = New-Object System.Drawing.Size(30,20) 
 $MainMenuLabel.Size = New-Object System.Drawing.Size(340,20) 
 
