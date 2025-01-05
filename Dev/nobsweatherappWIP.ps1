@@ -4,7 +4,12 @@ $script:CurrentLocation = $CurrentLocation.Path
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 [System.Windows.Forms.Application]::EnableVisualStyles()
-$script:ApiKey = "" #API KEY IS ON DESKTOP
+$script:ApiKey = "ADOZHku4NFxtcktMopauig==yn9ppoYOcv1Mcs95" #API KEY IS ON DESKTOP
+$envVar = [Environment]::GetEnvironmentVariable("LocationSavedForWeather", "User")
+if (-not $envVar) {
+    [Environment]::SetEnvironmentVariable("LocationSavedForWeather", "$LocationSavedData", "User")
+}
+$SavedCities = $envVar
 #endregion DECLORATIONS
 #region FUNCTIONS
 function Get-WeatherData {
@@ -45,6 +50,7 @@ function Get-WeatherData {
     Display-WeatherData
 }
 function Display-WeatherData {
+    #create data form
     $DataForm = New-Object Windows.Forms.Form
     $DataForm.Text = "Weather for: $script:CityOutput"
     $DataForm.Font = New-Object Drawing.Font("Cambria", 12, [Drawing.FontStyle]::Regular)
@@ -53,13 +59,14 @@ function Display-WeatherData {
     $DataForm.StartPosition = "CenterScreen"
     $DataForm.BackColor = [System.Drawing.Color]::WhiteSmoke
     $DataForm.WindowState = "Maximized"
+    #location of the data grids on data form
     $WeatherDataOutput = New-Object System.Windows.Forms.DataGridView  
     $WeatherDataOutput.Location = New-Object System.Drawing.Size(20,100)
     $WeatherDataOutputTwo = New-Object System.Windows.Forms.DataGridView  
     $WeatherDataOutputTwo.Location = New-Object System.Drawing.Size(20,500)
     #declare forms above, props below
-    $PictureBox = new-object Windows.Forms.PictureBox
-    $PictureBox.AutoSize = $true
+    #$PictureBox = new-object Windows.Forms.PictureBox
+    #$PictureBox.AutoSize = $true
     <#
     mkdir "$script:CurrentLocation\picturestemp" -Force
     $i = 1
@@ -85,13 +92,13 @@ function Display-WeatherData {
     $WeatherDataOutput.AutoSizeRowsMode = "AllCells"
     $WeatherDataOutputTwo.DataSource = $WeatherArryTwo
     $WeatherDataOutputTwo.AutoSize = $true
-
-    #NEED TO FIGURE OUT HOW TO SIZE THE ROWS SO THAT THEY DONT GO OFF THE SCREEN
+    $WeatherDataOutputTwo.AutoSizeColumnsMode = "AllCells"
+    $WeatherDataOutputTwo.AutoSizeRowsMode = "AllCells"
+    $WeatherDataOutputTwo.MaximumSize = New-Object System.Drawing.Size(1000, 1000) # Set maximum size
     $WeatherDataOutputTwo.ScrollBars = "Both"
     $DataForm.Controls.Add($WeatherDataOutput)
     $DataForm.Controls.Add($WeatherDataOutputTwo)
     $WeatherDataOutputTwo.PerformLayout()
-    #$DataForm.Controls.Add($PictureBox)
     $DataForm.Topmost = $True
     $DataForm.Add_Shown({ $DataForm.Activate() })
     [void]$DataForm.ShowDialog()
@@ -132,9 +139,33 @@ $MainMenuBttn.Add_Click({
     Set-Variable -Name CityFromTxtBox -Value "$($MainMenuTxtBox.Text)" -Force
     Get-WeatherData -CitySelected "$CityFromTxtBox"
 })
-
+$SaveBttn = New-Object Windows.Forms.Button
+$SaveBttn.Location = New-Object System.Drawing.Size($MainMenuTxtBox.Center, $MainMenuTxtBox.Top)
+$SaveBttn.Size = New-Object System.Drawing.Size(75,20)
+$SaveBttn.Text = "Save City"
+$SaveBttn.AutoSize = $true
+$SaveBttn.Add_Click({
+    [Environment]::SetEnvironmentVariable("LocationSavedForWeather", "$($MainMenuTxtBox.Text)", "User")
+})
+if ($SavedCities) {
+    $i = 0
+    foreach ($city in $SavedCities) {
+        $i++
+        ${$NewSavedCityButton + $i} = New-Object Windows.Forms.Button
+        ${$NewSavedCityButton + $i} = New-Object Windows.Forms.Button
+        ${$NewSavedCityButton + $i}.Location = New-Object System.Drawing.Size($MainMenuTxtBox.Right, $MainMenuTxtBox.Bottom)
+        ${$NewSavedCityButton + $i}.Size = New-Object System.Drawing.Size(75,20)
+        ${$NewSavedCityButton + $i}.Text = "Get Forecast"
+        ${$NewSavedCityButton + $i}.AutoSize = $true
+        ${$NewSavedCityButton + $i}.Add_Click({ 
+            Set-Variable -Name CityFromTxtBox -Value "$(${$NewSavedCityButton + $i}.Text)" -Force
+            Get-WeatherData -CitySelected "$CityFromTxtBox"
+        })
+    }
+}
 <#Add Controls and Show Form#>
 $MainMenu.Controls.Add($MainMenuBttn)
+$MainMenu.Controls.Add($SaveBttn)
 $MainMenu.Controls.Add($MainMenuTxtBox)
 $MainMenu.Controls.Add($MainMenuLabel)
 $MainMenu.Topmost = $True
