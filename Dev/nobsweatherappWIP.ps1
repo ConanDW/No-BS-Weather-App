@@ -4,7 +4,7 @@ $script:CurrentLocation = $CurrentLocation.Path
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 [System.Windows.Forms.Application]::EnableVisualStyles()
-$script:ApiKey = "ADOZHku4NFxtcktMopauig==yn9ppoYOcv1Mcs95" #API KEY IS ON DESKTOP
+$script:ApiKey = "" #API KEY IS ON DESKTOP
 $envVar = [Environment]::GetEnvironmentVariable("LocationSavedForWeather", "User")
 if (-not $envVar) {
     [Environment]::SetEnvironmentVariable("LocationSavedForWeather", "$LocationSavedData", "User")
